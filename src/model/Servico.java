@@ -15,6 +15,7 @@ public abstract class Servico {
         this.valorBase = valorBase;
     }
 
+    //setters e getters
     public int getId() {
         return id;
     }
