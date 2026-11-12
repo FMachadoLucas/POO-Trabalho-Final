@@ -4,11 +4,11 @@ public abstract class Pessoa {
 
     //atributos
     private static int proximoId = 1;
-    private int id;
-    private String nome;
-    private String cpf;
-    private String telefone;
-    private String endereco;
+    protected int id;
+    protected String nome;
+    protected String cpf;
+    protected String telefone;
+    protected String endereco;
 
     //construtor
     public Pessoa (String nome, String cpf, String telefone, String endereco) {
