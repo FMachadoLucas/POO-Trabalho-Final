@@ -11,10 +11,10 @@ public class Veterinario extends Pessoa{
         this.especialidade = especialidade;
     }
 
-    public String crmv() {
+    public String getCrmv() {
         return crmv;
     }
-    public void crmv(String crmv) {
+    public void setCrmv(String crmv) {
         this.crmv = crmv;
     }
     public String getEspecialidade() {
