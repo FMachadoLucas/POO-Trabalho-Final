@@ -11,6 +11,7 @@ public class Consulta extends Servico{
         this.diagnostico = diagnostico;
     }
 
+
     public String getMotivo() {
         return motivo;
     }
@@ -27,6 +28,33 @@ public class Consulta extends Servico{
     @Override
     public double calcularValorFinal() {
         return this.valorBase;
+    }
+
+
+    public String toLinha(){
+        return getNomeServico() + ";" + getValorBase() + ";" + getMotivo() + ";" + getDiagnostico();
+    }
+
+    public static Consulta fromLinha(String linha){
+        if(linha == null || linha.trim().isEmpty()){
+            return null;
+        }
+
+        String[] dados = linha.split(";");
+        if(dados.length != 4){
+            return null;
+        }
+
+        try {
+            String nomeServico = dados[0];
+            double valorBase = Double.parseDouble(dados[1]);
+            String motivo = dados[2];
+            String diagnostico = dados[3];
+
+            return new Consulta(nomeServico, valorBase, motivo, diagnostico);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
 }
