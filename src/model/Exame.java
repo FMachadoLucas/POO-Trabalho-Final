@@ -11,6 +11,7 @@ public class Exame extends Servico{
         this.taxaLaboratorial = taxaLaboratorial;
     }
 
+
     public String getTipoExame(){
         return tipoExame;
     }
@@ -29,4 +30,30 @@ public class Exame extends Servico{
         return this.valorBase + this.taxaLaboratorial;
     }
 
+
+    public String toLinha(){
+        return getNomeServico() + ";" + getValorBase() + ";" + getTipoExame() + ";" + getTaxaLaboratorial();
+    }
+
+    public static Exame fromLinha(String linha){
+        if(linha == null || linha.trim().isEmpty()){
+            return null;
+        }
+
+        String[] dados = linha.split(";");
+        if(dados.length != 4){
+            return null;
+        }
+
+        try {
+            String nomeServico = dados[0];
+            double valorBase = Double.parseDouble(dados[1]);
+            String tipoExame = dados[2];
+            double taxaLaboratorial = Double.parseDouble(dados[3]);
+
+            return new Exame(nomeServico, valorBase, tipoExame, taxaLaboratorial);
+        } catch(NumberFormatException e){
+            return null;
+        }
+    }
 }
