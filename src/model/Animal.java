@@ -21,6 +21,7 @@ public class Animal {
         this.prontuario = new Prontuario();
     }
 
+
     public int getId() {
         return id;
     }
@@ -57,12 +58,37 @@ public class Animal {
     public void setPeso(double peso) {
         this.peso = peso;
     }
-
-//    public void setProntuario(Prontuario prontuario) {
-//        this.prontuario = prontuario;
-//    }
     public Prontuario getProntuario() {
         return prontuario;
     }
 
+
+    public String toLinha(){
+        return this.nome + ";" + this.especie + ";" + this.raca + ";" + this.idade + ";" + this.peso;
+    }
+
+    public static Animal fromLinha(String linha){
+        if(linha == null || linha.trim().isEmpty()){
+            return null;
+        }
+
+        String[] dados = linha.split(";");
+        if(dados.length != 5){
+            return null;
+        }
+
+        //reconstruir o objeto Animal na memoria
+        try {
+            String nome = dados[0];
+            String especie = dados[1];
+            String raca = dados[2];
+            int idade = Integer.parseInt(dados[3]);
+            double peso = Double.parseDouble(dados[4]);
+
+            return new Animal(nome, especie, raca, idade, peso);
+
+        }catch (NumberFormatException e){
+            return null;//se ocorrer erro de conversao
+        }
+    }
 }

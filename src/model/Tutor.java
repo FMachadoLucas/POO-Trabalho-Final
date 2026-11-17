@@ -22,7 +22,6 @@ public class Tutor extends Pessoa{
         if(dados.length != 4) {
             return null;//conferir essa parte do codigo se da para melhorar
         }
-
         return new Tutor(dados[0], dados[1], dados[2], dados[3]);
     }
 
