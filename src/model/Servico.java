@@ -36,4 +36,5 @@ public abstract class Servico {
     }
 
     public abstract double calcularValorFinal();
+    public abstract String toLinha();
 }
