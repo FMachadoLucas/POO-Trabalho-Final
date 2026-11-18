@@ -40,7 +40,7 @@ public class Consulta extends Servico{
             return null;
         }
 
-        String[] dados = linha.split(";");
+        String[] dados = linha.split(";", -1);
         if(dados.length != 4){
             return null;
         }

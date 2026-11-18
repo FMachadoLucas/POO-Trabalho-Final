@@ -157,6 +157,35 @@ public class MainFX extends Application {
             }
         }
 
+        List<String> linhasVinculos = GerenciadorArquivo.carregarDados("vinculos_tutor_animal.txt");
+        for (String linha : linhasVinculos) {
+            String[] dados = linha.split(";", 2);
+            if (dados.length == 2) {
+                Animal animalVinculado = buscarAnimalPorNome(dados[0]);
+                Tutor tutorVinculado = buscarTutorPorCpf(dados[1]);
+
+                if (animalVinculado != null && tutorVinculado != null) {
+                    tutorDoAnimal.put(animalVinculado, tutorVinculado);
+                }
+            }
+        }
+
+        List<String> linhasProntuarios = GerenciadorArquivo.carregarDados("prontuarios.txt");
+        for (String linha : linhasProntuarios) {
+            String[] dados = linha.split(";", 2);
+            if (dados.length == 2) {
+                String nomeAnimal = dados[0];
+                String registro = dados[1];
+
+                for (Animal animal : animais) {
+                    if (animal.getNome().equals(nomeAnimal)) {
+                        animal.getProntuario().adicionarRegistro(registro);
+                        break;
+                    }
+                }
+            }
+        }
+
         //carregar os Veterinarios do disco
         List<String> linhasVeterinarios = GerenciadorArquivo.carregarDados("veterinarios.txt");
         for(String linha : linhasVeterinarios) {
@@ -192,6 +221,14 @@ public class MainFX extends Application {
             );
             if (agendamento != null) {
                 agendamentos.add(agendamento);
+            }
+        }
+
+        List<String> linhasPagamentos = GerenciadorArquivo.carregarDados("pagamentos.txt");
+        for (String linha : linhasPagamentos) {
+            Pagamento pagamento = Pagamento.fromLinha(linha, agendamentos);
+            if (pagamento != null) {
+                pagamentos.add(pagamento);
             }
         }
     }
@@ -242,6 +279,7 @@ public class MainFX extends Application {
             //persistencia dos arquivos no disco
             GerenciadorArquivo.anexarLinha("tutores.txt", tutor.toLinha());
             GerenciadorArquivo.anexarLinha("animais.txt", animal.toLinha());
+            GerenciadorArquivo.anexarLinha("vinculos_tutor_animal.txt", animal.getNome() + ";" + tutor.getCpf());
 
             limpar(tNome, tCpf, tTel, tEnd, aNome, aEsp, aRaca, aIdade, aPeso);
             info("Tutor e animal cadastrados com sucesso!");
@@ -408,6 +446,14 @@ public class MainFX extends Application {
         return criarAba("3. Serviço", form, btn, tabela);
     }
 
+    private void salvarAgendamentos() {
+        StringBuilder sb = new StringBuilder();
+        for (Agendamento agendamento : agendamentos) {
+            sb.append(agendamento.toLinha()).append(System.lineSeparator());
+        }
+        GerenciadorArquivo.salvarDados("agendamentos.txt", sb.toString());
+    }
+
     // =====================================================================
     // 4. Agendamento
     // =====================================================================
@@ -456,12 +502,16 @@ public class MainFX extends Application {
                 throw new ClinicaException("Hora inválida! Use o formato HH:mm (ex: 14:30).");
             }
             LocalDateTime dataHora = LocalDateTime.of(data.getValue(), h);
+            if (dataHora.isBefore(LocalDateTime.now())) {
+                throw new ClinicaException("Não é possível agendar para uma data/hora no passado.");
+            }
+
             Animal animal = cbAnimal.getValue();
             Veterinario vet = cbVet.getValue();
             Tutor tutor = tutorDoAnimal.get(animal);
 
             if(tutor == null){
-                throw new ClinicaException(("nimal sem tutor vinculado. Verifique o cadastro de tutor e animal."));
+                throw new ClinicaException("Animal sem tutor vinculado. Verifique o cadastro de tutor e animal.");
             }
 
             Agendamento novo = new Agendamento(dataHora, animal, tutor, vet, cbServ.getValue());
@@ -485,6 +535,7 @@ public class MainFX extends Application {
             if (!"Agendado".equals(sel.getStatus()))
                 throw new ClinicaException("Só é possível cancelar agendamentos com status 'Agendado'.");
             sel.cancelar();
+            salvarAgendamentos();
             atualizar(tabela);
             agendamentosPendentes.setPredicate(a -> "Agendado".equals(a.getStatus()));
         }));
@@ -492,7 +543,7 @@ public class MainFX extends Application {
         tabela.getColumns().add(coluna("ID", a -> String.valueOf(a.getId()), 40));
         tabela.getColumns().add(coluna("Data/Hora", a -> a.getDataHora().format(FMT), 120));
         tabela.getColumns().add(coluna("Animal", a -> a.getAnimal().getNome(), 100));
-        tabela.getColumns().add(coluna("Tutor", a -> a.getTutor().getNome(), 120));
+        tabela.getColumns().add(coluna("Tutor", a -> a.getTutor() == null ? "Tutor não vinculado" : a.getTutor().getNome(), 120));
         tabela.getColumns().add(coluna("Veterinário", a -> a.getVeterinario().getNome(), 120));
         tabela.getColumns().add(coluna("Serviço", a -> a.getServico().getNomeServico(), 120));
         tabela.getColumns().add(coluna("Status", Agendamento::getStatus, 80));
@@ -531,6 +582,8 @@ public class MainFX extends Application {
             Pagamento p = new Pagamento(ag, cbForma.getValue());
             p.processarPagamento();
             pagamentos.add(p);
+            GerenciadorArquivo.anexarLinha("pagamentos.txt", p.toLinha());
+            salvarAgendamentos();
             agendamentosPendentes.setPredicate(a -> "Agendado".equals(a.getStatus()));
             cbAg.getSelectionModel().clearSelection();
             lblValor.setText("-");
@@ -568,9 +621,11 @@ public class MainFX extends Application {
             if (cbAnimal.getValue() == null) throw new ClinicaException("Selecione um animal!");
             if (texto.getText().trim().isEmpty()) throw new ClinicaException("Digite a anotação!");
             String registro = "[" + LocalDateTime.now().format(FMT) + "] " + texto.getText().trim();
-            cbAnimal.getValue().getProntuario().adicionarRegisto(registro);
+            Animal animal = cbAnimal.getValue();
+            animal.getProntuario().adicionarRegistro(registro);
+            GerenciadorArquivo.anexarLinha("prontuarios.txt", animal.getNome() + ";" + registro);
             texto.clear();
-            info("Registro adicionado ao prontuário de " + cbAnimal.getValue().getNome() + ".");
+            info("Registro adicionado ao prontuário de " + animal.getNome() + ".");
         }));
 
         return criarAba("6. Registrar Prontuário", form, btn);
@@ -689,8 +744,26 @@ public class MainFX extends Application {
 
 
     // =====================================================================
-    // Métodos auxiliares
-    // =====================================================================
+// Métodos auxiliares
+// =====================================================================
+
+    private Animal buscarAnimalPorNome(String nomeAnimal) {
+        for (Animal animal : animais) {
+            if (animal.getNome().equals(nomeAnimal)) {
+                return animal;
+            }
+        }
+        return null;
+    }
+
+    private Tutor buscarTutorPorCpf(String cpfTutor) {
+        for (Tutor tutor : tutores) {
+            if (tutor.getCpf().equals(cpfTutor)) {
+                return tutor;
+            }
+        }
+        return null;
+    }
 
     /** Executa uma ação tratando as exceções igual ao antigo try/catch do Main. */
     private void executar(Acao acao) {

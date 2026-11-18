@@ -18,7 +18,7 @@ public class GerenciadorArquivo {
     private static void verificarDiretorio(){
         File diretorio = new File(DIRETORIO_PADRAO);
         if(!diretorio.exists()){
-            diretorio.mkdir();//cria o diretorio no sistema de arquivos se ele nao existir
+            diretorio.mkdirs();
         }
     }
 
@@ -52,6 +52,8 @@ public class GerenciadorArquivo {
 
     // Lê o arquivo linha por linha e retorna uma lista com todas as linhas em formato String
     public static List<String> carregarDados(String nomeArquivo){
+        verificarDiretorio();
+
         List<String> linhas = new ArrayList<>();
         File arquivo = new File(DIRETORIO_PADRAO + nomeArquivo);
 

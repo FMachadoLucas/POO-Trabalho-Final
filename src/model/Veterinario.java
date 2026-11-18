@@ -35,7 +35,7 @@ public class Veterinario extends Pessoa{
             return null;
         }
 
-        String[] dados = linha.split(";");
+        String[] dados = linha.split(";", -1);
         if(dados.length != 6){
             return null;
         }

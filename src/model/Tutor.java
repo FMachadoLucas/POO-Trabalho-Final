@@ -18,9 +18,9 @@ public class Tutor extends Pessoa{
         }
 
         //separar os dados da linha por ";"
-        String[] dados = linha.split(";");
+        String[] dados = linha.split(";", -1);
         if(dados.length != 4) {
-            return null;//conferir essa parte do codigo se da para melhorar
+            return null;
         }
         return new Tutor(dados[0], dados[1], dados[2], dados[3]);
     }

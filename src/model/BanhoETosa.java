@@ -52,7 +52,7 @@ public class BanhoETosa extends Servico{
             return null;
         }
 
-        String[] dados = linha.split(";");
+        String[] dados = linha.split(";", -1);
         if(dados.length != 5){
             return null;
         }

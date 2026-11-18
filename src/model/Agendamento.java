@@ -82,7 +82,8 @@ public class Agendamento {//classe que conecta/relaciona as outras classes
     }
 
     public String toLinha(){
-        return dataHora + ";"
+        return id + ";"
+                + dataHora + ";"
                 + animal.getNome() + ";"
                 + tutor.getCpf() + ";"
                 + veterinario.getCrmv() + ";"
@@ -99,18 +100,19 @@ public class Agendamento {//classe que conecta/relaciona as outras classes
             return null;
         }
 
-        String[] dados = linha.split(";");
-        if(dados.length != 6){
+        String[] dados = linha.split(";", -1);
+        if(dados.length != 7){
             return null;
         }
 
         try {
-            LocalDateTime dataHora = LocalDateTime.parse(dados[0]);
-            String nomeAnimal = dados[1];
-            String cpfTutor = dados[2];
-            String crmvVet = dados[3];
-            String nomeServico = dados[4];
-            String status = dados[5];
+            int id = Integer.parseInt(dados[0]);
+            LocalDateTime dataHora = LocalDateTime.parse(dados[1]);
+            String nomeAnimal = dados[2];
+            String cpfTutor = dados[3];
+            String crmvVet = dados[4];
+            String nomeServico = dados[5];
+            String status = dados[6];
 
             Animal animal = animais.stream()
                     .filter(a -> a.getNome().equals(nomeAnimal))
@@ -118,6 +120,10 @@ public class Agendamento {//classe que conecta/relaciona as outras classes
                     .orElse(null);
 
             Tutor tutor = animal == null ? null : tutorDoAnimal.get(animal);
+
+            if (tutor != null && !tutor.getCpf().equals(cpfTutor)) {
+                tutor = null;
+            }
 
             Veterinario veterinario = veterinarios.stream()
                     .filter(v -> v.getCrmv().equals(crmvVet))
@@ -134,7 +140,13 @@ public class Agendamento {//classe que conecta/relaciona as outras classes
             }
 
             Agendamento agendamento = new Agendamento(dataHora, animal, tutor, veterinario, servico);
+            agendamento.setId(id);
             agendamento.setStatus(status);
+
+            if (id >= proximoId) {
+                proximoId = id + 1;
+            }
+
             return agendamento;
 
         } catch (Exception e) {

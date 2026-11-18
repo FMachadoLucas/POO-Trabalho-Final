@@ -53,4 +53,45 @@ public class Pagamento {
         this.dataPagamento = dataPagamento;
     }
 
+    public String toLinha(){
+        return agendamento.getId() + ";"
+                + valorPago + ";"
+                + formaPagamento + ";"
+                + dataPagamento;
+    }
+
+    public static Pagamento fromLinha(String linha, java.util.List<Agendamento> agendamentos) {
+        if (linha == null || linha.trim().isEmpty()) {
+            return null;
+        }
+
+        String[] dados = linha.split(";", -1);
+        if (dados.length != 4) {
+            return null;
+        }
+
+        try {
+            int idAgendamento = Integer.parseInt(dados[0]);
+            double valorPago = Double.parseDouble(dados[1]);
+            String formaPagamento = dados[2];
+            java.time.LocalDate dataPagamento = java.time.LocalDate.parse(dados[3]);
+
+            Agendamento agendamento = agendamentos.stream()
+                    .filter(a -> a.getId() == idAgendamento)
+                    .findFirst()
+                    .orElse(null);
+
+            if (agendamento == null) {
+                return null;
+            }
+
+            Pagamento pagamento = new Pagamento(agendamento, formaPagamento);
+            pagamento.setValorPago(valorPago);
+            pagamento.setDataPagamento(dataPagamento);
+            return pagamento;
+
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

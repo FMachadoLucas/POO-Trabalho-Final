@@ -15,9 +15,9 @@ public class Prontuario {
     }
 
     //metodos
-    //adiciona uma nova anotacao clinica a lista
+//adiciona uma nova anotacao clinica a lista
     public void adicionarRegisto(String registro){
-        this.historicoEntrada.add(registro);
+        adicionarRegistro(registro);
     }
 
     public List<String> getHistoricoEntrada(){
@@ -35,4 +35,9 @@ public class Prontuario {
         return this.id;
     }
 
+    public void adicionarRegistro(String registro) {
+        if (registro != null && !registro.trim().isEmpty()) {
+            this.historicoEntrada.add(registro);
+        }
+    }
 }
