@@ -180,6 +180,20 @@ public class MainFX extends Application {
             }
             if(servico != null) servicos.add(servico);
         }
+
+        List<String> linhasAgendamentos = GerenciadorArquivo.carregarDados("agendamentos.txt");
+        for (String linha : linhasAgendamentos) {
+            Agendamento agendamento = Agendamento.fromLinha(
+                    linha,
+                    animais,
+                    tutorDoAnimal,
+                    veterinarios,
+                    servicos
+            );
+            if (agendamento != null) {
+                agendamentos.add(agendamento);
+            }
+        }
     }
 
 
@@ -405,7 +419,12 @@ public class MainFX extends Application {
         Label lblTutor = new Label("-");
         cbAnimal.setOnAction(e -> {
             Animal a = cbAnimal.getValue();
-            lblTutor.setText(a == null ? "-" : tutorDoAnimal.get(a).getNome());
+            if (a == null) {
+                lblTutor.setText("-");
+            }else{
+                Tutor tutor = tutorDoAnimal.get(a);
+                lblTutor.setText(tutor == null ? "Tutor não vinculado" : tutor.getNome());
+            }
         });
 
         DatePicker data = new DatePicker(LocalDate.now());
@@ -439,8 +458,13 @@ public class MainFX extends Application {
             LocalDateTime dataHora = LocalDateTime.of(data.getValue(), h);
             Animal animal = cbAnimal.getValue();
             Veterinario vet = cbVet.getValue();
+            Tutor tutor = tutorDoAnimal.get(animal);
 
-            Agendamento novo = new Agendamento(dataHora, animal, tutorDoAnimal.get(animal), vet, cbServ.getValue());
+            if(tutor == null){
+                throw new ClinicaException(("nimal sem tutor vinculado. Verifique o cadastro de tutor e animal."));
+            }
+
+            Agendamento novo = new Agendamento(dataHora, animal, tutor, vet, cbServ.getValue());
             novo.verificarDisponibilidade(dataHora, vet);
 
             for (Agendamento a : agendamentos) {
@@ -450,6 +474,7 @@ public class MainFX extends Application {
                 }
             }
             agendamentos.add(novo);
+            GerenciadorArquivo.anexarLinha("agendamentos.txt", novo.toLinha());
             info("Agendamento #" + novo.getId() + " realizado com sucesso!");
         }));
 
@@ -618,9 +643,10 @@ public class MainFX extends Application {
 
         sb.append("\n--- ANIMAIS (").append(animais.size()).append(") ---\n");
         for (Animal a : animais) {
+            Tutor tutor = tutorDoAnimal.get(a);
             sb.append(a.getId()).append(" | ").append(a.getNome()).append(" | ").append(a.getEspecie())
                     .append(" | ").append(a.getRaca()).append(" | Tutor: ")
-                    .append(tutorDoAnimal.get(a).getNome()).append("\n");
+                    .append(tutor == null ? "Tutor não vinculado" : tutor.getNome()).append("\n");
         }
 
         sb.append("\n--- VETERINÁRIOS (").append(veterinarios.size()).append(") ---\n");
@@ -659,6 +685,8 @@ public class MainFX extends Application {
         }
         return sb.toString();
     }
+
+
 
     // =====================================================================
     // Métodos auxiliares
