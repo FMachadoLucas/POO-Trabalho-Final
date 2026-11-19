@@ -636,10 +636,6 @@ public class MainFX extends Application {
             Agendamento ag = cbAg.getValue();
             if (ag == null) throw new ClinicaException("Selecione um agendamento pendente!");
 
-            if (ag.getDataHora().isAfter(LocalDateTime.now())) {
-                throw new ClinicaException("Não é possível processar pagamento antes da data/hora do atendimento.");
-            }
-
             Pagamento p = new Pagamento(ag, cbForma.getValue());
             p.processarPagamento();
             pagamentos.add(p);
