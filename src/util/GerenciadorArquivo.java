@@ -1,5 +1,7 @@
 package util;
 
+import clinica.exception.ClinicaException;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -23,30 +25,28 @@ public class GerenciadorArquivo {
     }
 
     // Sobrescreve todo o conteudo do arquivo com um novo texto completo
-    public static void salvarDados(String nomeArquivo, String conteudo){
+    public static void salvarDados(String nomeArquivo, String conteudo) throws ClinicaException {
         verificarDiretorio();
         String caminhoCompleto = DIRETORIO_PADRAO + nomeArquivo;
 
-        //false: indica que o conteudo antigo sera sobrescrito
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoCompleto, false))){
             bw.write(conteudo);
         } catch (IOException e) {
-            System.out.println("Erro ao salvar dados no arquivo " + nomeArquivo + ": " + e.getMessage());
+            throw new ClinicaException("Erro ao salvar dados no arquivo " + nomeArquivo + ": " + e.getMessage());
         }
     }
 
     // Anexa uma nova linha ao final do arquivo sem apagar o conteúdo existente
     //linha: linha de texto para ser anexada
-    public static void anexarLinha(String nomeArquivo, String linha){
+    public static void anexarLinha(String nomeArquivo, String linha) throws ClinicaException {
         verificarDiretorio();
         String caminhoCompleto = DIRETORIO_PADRAO + nomeArquivo;
 
-        //true: ativa o modo append (anexar ao final)
         try (BufferedWriter bw = new BufferedWriter(new FileWriter(caminhoCompleto, true))){
             bw.write(linha);
-            bw.newLine();//quebra de linha
+            bw.newLine();
         } catch (IOException e) {
-            System.out.println("Erro ao anexar linha ao arquivo " + nomeArquivo + ": " + e.getMessage());
+            throw new ClinicaException("Erro ao anexar linha ao arquivo " + nomeArquivo + ": " + e.getMessage());
         }
     }
 

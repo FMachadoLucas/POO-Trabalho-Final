@@ -125,6 +125,8 @@ public class MainFX extends Application {
 
         stage.setTitle("Clínica Veterinária Hina e Francisco");
         stage.setScene(new Scene(raiz, 1100, 740));
+        stage.setMinWidth(950);
+        stage.setMinHeight(650);
         stage.setOnCloseRequest(e -> musica.parar());
         stage.show();
         if (!musica.iniciar()) {
@@ -197,16 +199,28 @@ public class MainFX extends Application {
         List<String> linhasServicos = GerenciadorArquivo.carregarDados("servicos.txt");
         for(String linha : linhasServicos){
             Servico servico = null;
+            String[] dados = linha.split(";", -1);
 
-            //se a linha tem 5 dados, eh um BanhoETosa
-            if(linha.split(";").length == 5){
-                servico = BanhoETosa.fromLinha(linha);
-            }else{
-                //se tiver 4 dados, testar se eh uma Vacinacao, Exame ou Consulta
-                servico = Vacinacao.fromLinha(linha);
-                if(servico == null) servico = Exame.fromLinha(linha);
-                if(servico == null) servico = Consulta.fromLinha(linha);
+            if (dados.length > 0) {
+                switch (dados[0]) {
+                    case "Consulta":
+                        servico = Consulta.fromLinha(linha);
+                        break;
+                    case "Vacinacao":
+                        servico = Vacinacao.fromLinha(linha);
+                        break;
+                    case "Exame":
+                        servico = Exame.fromLinha(linha);
+                        break;
+                    case "BanhoETosa":
+                        servico = BanhoETosa.fromLinha(linha);
+                        break;
+                    default:
+                        servico = null;
+                        break;
+                }
             }
+
             if(servico != null) servicos.add(servico);
         }
 
@@ -261,11 +275,15 @@ public class MainFX extends Application {
         Button btn = new Button("Cadastrar Tutor e Animal");
         btn.setOnAction(e -> executar(() -> {
             exigir(tNome, "nome do tutor");
-            exigir(tCpf, "CPF");
+            validarCpf(tCpf);
             exigir(aNome, "nome do animal");
             exigir(aEsp, "espécie");
             int idade = lerInt(aIdade, "idade");
             double peso = lerDouble(aPeso, "peso");
+
+            if (existeTutorComCpf(tCpf.getText().trim())) {
+                throw new ClinicaException("Já existe um tutor cadastrado com este CPF.");
+            }
 
             Tutor tutor = new Tutor(tNome.getText().trim(), tCpf.getText().trim(),
                     tTel.getText().trim(), tEnd.getText().trim());
@@ -321,10 +339,14 @@ public class MainFX extends Application {
         Button btn = new Button("Cadastrar Veterinário");
         btn.setOnAction(e -> executar(() -> {
             exigir(nome, "nome");
-            exigir(cpf, "CPF");
+            validarCpf(cpf);
             exigir(crmv, "CRMV");
 
-            //Cria a instancia do Veterinario com os dados digitados na tela
+            if (existeVeterinarioComCrmv(crmv.getText().trim())) {
+                throw new ClinicaException("Já existe um veterinário cadastrado com este CRMV.");
+            }
+
+//Cria a instancia do Veterinario com os dados digitados na tela
             Veterinario vet = new Veterinario(nome.getText().trim(), cpf.getText().trim(), tel.getText().trim(), end.getText().trim(), crmv.getText().trim(), esp.getText().trim());
 
             //Adiciona na lista em memoria RAM para atualizar a tabela do JavaFX
@@ -419,8 +441,14 @@ public class MainFX extends Application {
                             lerDouble(extra2, "taxa laboratorial"));
                     break;
                 default:
+                    double taxaTosa = 0;
+
+                    if (tosaHigienica.isSelected()) {
+                        taxaTosa = lerDouble(extra2, "taxa de tosa");
+                    }
+
                     s = new BanhoETosa(nome.getText().trim(), base, extra1.getText().trim(),
-                            tosaHigienica.isSelected(), lerDouble(extra2, "taxa de tosa"));
+                            tosaHigienica.isSelected(), taxaTosa);
                     break;
             }
             //Adiciona o serviço na lista em memória RAM
@@ -446,7 +474,7 @@ public class MainFX extends Application {
         return criarAba("3. Serviço", form, btn, tabela);
     }
 
-    private void salvarAgendamentos() {
+    private void salvarAgendamentos() throws ClinicaException {
         StringBuilder sb = new StringBuilder();
         for (Agendamento agendamento : agendamentos) {
             sb.append(agendamento.toLinha()).append(System.lineSeparator());
@@ -458,7 +486,11 @@ public class MainFX extends Application {
     // 4. Agendamento
     // =====================================================================
     private Tab abaAgendamento() {
-        ComboBox<Animal> cbAnimal = combo(animais, a -> a.getNome() + " (" + a.getEspecie() + ")");
+        ComboBox<Animal> cbAnimal = combo(animais, a -> {
+            Tutor tutor = tutorDoAnimal.get(a);
+            String nomeTutor = tutor == null ? "sem tutor" : tutor.getNome();
+            return "#" + a.getId() + " - " + a.getNome() + " (" + a.getEspecie() + ") - Tutor: " + nomeTutor;
+        });
         ComboBox<Veterinario> cbVet = combo(veterinarios, Veterinario::getNome);
         ComboBox<Servico> cbServ = combo(servicos,
                 s -> s.getNomeServico() + " - " + moeda(s.calcularValorFinal()));
@@ -492,14 +524,31 @@ public class MainFX extends Application {
             if (cbAnimal.getValue() == null || cbVet.getValue() == null || cbServ.getValue() == null) {
                 throw new ClinicaException("Selecione animal, veterinário e serviço!");
             }
-            if (data.getValue() == null) {
+            if (data.getEditor().getText() == null || data.getEditor().getText().trim().isEmpty()) {
                 throw new ClinicaException("Informe a data!");
             }
-            LocalTime h;
+
             try {
-                h = LocalTime.parse(hora.getText().trim());
+                data.setValue(data.getConverter().fromString(data.getEditor().getText()));
             } catch (Exception ex) {
-                throw new ClinicaException("Hora inválida! Use o formato HH:mm (ex: 14:30).");
+                throw new ClinicaException("Data inválida! Corrija a data antes de agendar.");
+            }
+
+            if (data.getValue() == null) {
+                throw new ClinicaException("Data inválida! Corrija a data antes de agendar.");
+            }
+
+            LocalTime h;
+            String textoHora = hora.getText().trim();
+
+            if (!textoHora.matches("\\d{2}:\\d{2}")) {
+                throw new ClinicaException("Hora inválida! Use exatamente o formato HH:mm (ex: 14:30).");
+            }
+
+            try {
+                h = LocalTime.parse(textoHora);
+            } catch (Exception ex) {
+                throw new ClinicaException("Hora inválida! Use exatamente o formato HH:mm (ex: 14:30).");
             }
             LocalDateTime dataHora = LocalDateTime.of(data.getValue(), h);
             if (dataHora.isBefore(LocalDateTime.now())) {
@@ -518,9 +567,16 @@ public class MainFX extends Application {
             novo.verificarDisponibilidade(dataHora, vet);
 
             for (Agendamento a : agendamentos) {
-                if (a.getVeterinario() == vet && a.getDataHora().equals(dataHora)
+                if (a.getVeterinario().getCrmv().equalsIgnoreCase(vet.getCrmv())
+                        && a.getDataHora().equals(dataHora)
                         && "Agendado".equals(a.getStatus())) {
                     throw new ClinicaException("O veterinário já tem um agendamento nesse horário!");
+                }
+
+                if (a.getAnimal() == animal
+                        && a.getDataHora().equals(dataHora)
+                        && "Agendado".equals(a.getStatus())) {
+                    throw new ClinicaException("Este animal já possui um agendamento nesse horário!");
                 }
             }
             agendamentos.add(novo);
@@ -579,6 +635,11 @@ public class MainFX extends Application {
         btn.setOnAction(e -> executar(() -> {
             Agendamento ag = cbAg.getValue();
             if (ag == null) throw new ClinicaException("Selecione um agendamento pendente!");
+
+            if (ag.getDataHora().isAfter(LocalDateTime.now())) {
+                throw new ClinicaException("Não é possível processar pagamento antes da data/hora do atendimento.");
+            }
+
             Pagamento p = new Pagamento(ag, cbForma.getValue());
             p.processarPagamento();
             pagamentos.add(p);
@@ -606,7 +667,11 @@ public class MainFX extends Application {
     // 6. Registrar no prontuário
     // =====================================================================
     private Tab abaRegistroProntuario() {
-        ComboBox<Animal> cbAnimal = combo(animais, a -> a.getNome() + " (" + a.getEspecie() + ")");
+        ComboBox<Animal> cbAnimal = combo(animais, a -> {
+            Tutor tutor = tutorDoAnimal.get(a);
+            String nomeTutor = tutor == null ? "sem tutor" : tutor.getNome();
+            return "#" + a.getId() + " - " + a.getNome() + " (" + a.getEspecie() + ") - Tutor: " + nomeTutor;
+        });
         TextArea texto = new TextArea();
         texto.setPromptText("Digite a anotação clínica...");
         texto.setPrefRowCount(6);
@@ -635,7 +700,11 @@ public class MainFX extends Application {
     // 7. Visualizar prontuário
     // =====================================================================
     private Tab abaVisualizarProntuario() {
-        ComboBox<Animal> cbAnimal = combo(animais, a -> a.getNome() + " (" + a.getEspecie() + ")");
+        ComboBox<Animal> cbAnimal = combo(animais, a -> {
+            Tutor tutor = tutorDoAnimal.get(a);
+            String nomeTutor = tutor == null ? "sem tutor" : tutor.getNome();
+            return "#" + a.getId() + " - " + a.getNome() + " (" + a.getEspecie() + ") - Tutor: " + nomeTutor;
+        });
         TextArea area = new TextArea();
         area.setEditable(false);
         area.setWrapText(true);
@@ -727,9 +796,11 @@ public class MainFX extends Application {
         double total = 0;
         sb.append("\n--- PAGAMENTOS (").append(pagamentos.size()).append(") ---\n");
         for (Pagamento p : pagamentos) {
-            total += p.getValorPago();
+            double valorArredondado = Math.round(p.getValorPago() * 100.0) / 100.0;
+            total += valorArredondado;
+
             sb.append("#").append(p.getId()).append(" | ").append(p.getAgendamento().getAnimal().getNome())
-                    .append(" | ").append(moeda(p.getValorPago())).append(" | ")
+                    .append(" | ").append(moeda(valorArredondado)).append(" | ")
                     .append(p.getFormaPagamento()).append("\n");
         }
         sb.append("TOTAL ARRECADADO: ").append(moeda(total)).append("\n");
@@ -763,6 +834,19 @@ public class MainFX extends Application {
             }
         }
         return null;
+    }
+
+    private boolean existeTutorComCpf(String cpf) {
+        return buscarTutorPorCpf(cpf) != null;
+    }
+
+    private boolean existeVeterinarioComCrmv(String crmv) {
+        for (Veterinario veterinario : veterinarios) {
+            if (veterinario.getCrmv().equalsIgnoreCase(crmv)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Executa uma ação tratando as exceções igual ao antigo try/catch do Main. */
@@ -810,6 +894,16 @@ public class MainFX extends Application {
         }
     }
 
+    private void validarCpf(TextField campo) throws ClinicaException {
+        exigir(campo, "CPF");
+
+        String cpf = campo.getText().trim();
+
+        if (!cpf.matches("\\d{11}")) {
+            throw new ClinicaException("CPF inválido! Informe exatamente 11 números.");
+        }
+    }
+
     private int lerInt(TextField campo, String nome) throws ClinicaException {
         try {
             int v = Integer.parseInt(campo.getText().trim());
@@ -823,10 +917,14 @@ public class MainFX extends Application {
     private double lerDouble(TextField campo, String nome) throws ClinicaException {
         try {
             double v = Double.parseDouble(campo.getText().trim().replace(",", "."));
-            if (v < 0) throw new NumberFormatException();
+
+            if (v < 0 || Double.isNaN(v) || Double.isInfinite(v)) {
+                throw new NumberFormatException();
+            }
+
             return v;
         } catch (NumberFormatException e) {
-            throw new ClinicaException("Valor inválido no campo: " + nome + "!");
+            throw new ClinicaException("Valor inválido no campo: " + nome + "! Informe um número finito e maior ou igual a zero.");
         }
     }
 

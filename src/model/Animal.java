@@ -12,6 +12,22 @@ public class Animal {
     private Prontuario prontuario;//composicao
 
     public Animal(String nome, String especie, String raca, int idade, double peso){
+        if (nome == null || nome.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nome do animal é obrigatório.");
+        }
+
+        if (especie == null || especie.trim().isEmpty()) {
+            throw new IllegalArgumentException("Espécie do animal é obrigatória.");
+        }
+
+        if (idade < 0) {
+            throw new IllegalArgumentException("Idade do animal não pode ser negativa.");
+        }
+
+        if (peso < 0 || Double.isNaN(peso) || Double.isInfinite(peso)) {
+            throw new IllegalArgumentException("Peso do animal é inválido.");
+        }
+
         this.id = proximoId++;
         this.nome = nome;
         this.especie = especie;

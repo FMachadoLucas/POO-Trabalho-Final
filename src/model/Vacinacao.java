@@ -32,7 +32,7 @@ public class Vacinacao extends Servico{
 
 
     public String toLinha(){
-        return getNomeServico() + ";" + getValorBase() + ";" + getNomeVacina() + ";" + getCustoDose();
+        return "Vacinacao;" + getNomeServico() + ";" + getValorBase() + ";" + getNomeVacina() + ";" + getCustoDose();
     }
 
     public static Vacinacao fromLinha(String linha){
@@ -41,15 +41,15 @@ public class Vacinacao extends Servico{
         }
 
         String[] dados = linha.split(";", -1);
-        if(dados.length != 4){
+        if(dados.length != 5 || !"Vacinacao".equals(dados[0])){
             return null;
         }
 
         try {
-            String nomeServico = dados[0];
-            double valorBase = Double.parseDouble(dados[1]);
-            String nomeVacina = dados[2];
-            double custoDose = Double.parseDouble(dados[3]);
+            String nomeServico = dados[1];
+            double valorBase = Double.parseDouble(dados[2]);
+            String nomeVacina = dados[3];
+            double custoDose = Double.parseDouble(dados[4]);
 
             return new Vacinacao(nomeServico, valorBase, nomeVacina, custoDose);
         } catch(NumberFormatException e){

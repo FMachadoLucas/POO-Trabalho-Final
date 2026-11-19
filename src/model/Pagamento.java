@@ -10,9 +10,23 @@ public class Pagamento {
     private java.time.LocalDate dataPagamento;
 
     public Pagamento(Agendamento agendamento, String formaPagamento){
+        if (agendamento == null) {
+            throw new IllegalArgumentException("Agendamento não pode ser nulo.");
+        }
+
+        if (formaPagamento == null || formaPagamento.trim().isEmpty()) {
+            throw new IllegalArgumentException("Forma de pagamento é obrigatória.");
+        }
+
+        double valor = agendamento.getServico().calcularValorFinal();
+
+        if (valor < 0 || Double.isNaN(valor) || Double.isInfinite(valor)) {
+            throw new IllegalArgumentException("Valor do pagamento inválido.");
+        }
+
         this.id = proximoId++;
         this.dataPagamento = java.time.LocalDate.now();
-        this.valorPago = agendamento.getServico().calcularValorFinal();
+        this.valorPago = valor;
         this.agendamento = agendamento;
         this.formaPagamento = formaPagamento;
     }

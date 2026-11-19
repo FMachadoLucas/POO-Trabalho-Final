@@ -44,7 +44,7 @@ public class BanhoETosa extends Servico{
 
 
     public String toLinha(){
-        return getNomeServico() + ";" + getValorBase() + ";" + getPorteAnimal() + ";" + isIncluirTosaHigienica() + ";" + getTaxaTosa();
+        return "BanhoETosa;" + getNomeServico() + ";" + getValorBase() + ";" + getPorteAnimal() + ";" + isIncluirTosaHigienica() + ";" + getTaxaTosa();
     }
 
     public static BanhoETosa fromLinha(String linha){
@@ -53,16 +53,16 @@ public class BanhoETosa extends Servico{
         }
 
         String[] dados = linha.split(";", -1);
-        if(dados.length != 5){
+        if(dados.length != 6 || !"BanhoETosa".equals(dados[0])){
             return null;
         }
 
         try {
-            String nomeServico = dados[0];
-            double valorBase = Double.parseDouble(dados[1]);
-            String porteAnimal = dados[2];
-            boolean incluirTosaHigienica = Boolean.parseBoolean(dados[3]);
-            double taxaTosa = Double.parseDouble(dados[4]);
+            String nomeServico = dados[1];
+            double valorBase = Double.parseDouble(dados[2]);
+            String porteAnimal = dados[3];
+            boolean incluirTosaHigienica = Boolean.parseBoolean(dados[4]);
+            double taxaTosa = Double.parseDouble(dados[5]);
 
             return new BanhoETosa(nomeServico, valorBase, porteAnimal, incluirTosaHigienica, taxaTosa);
         } catch(NumberFormatException e) {

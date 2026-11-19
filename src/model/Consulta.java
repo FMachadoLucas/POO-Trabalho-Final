@@ -32,7 +32,7 @@ public class Consulta extends Servico{
 
 
     public String toLinha(){
-        return getNomeServico() + ";" + getValorBase() + ";" + getMotivo() + ";" + getDiagnostico();
+        return "Consulta;" + getNomeServico() + ";" + getValorBase() + ";" + getMotivo() + ";" + getDiagnostico();
     }
 
     public static Consulta fromLinha(String linha){
@@ -41,15 +41,15 @@ public class Consulta extends Servico{
         }
 
         String[] dados = linha.split(";", -1);
-        if(dados.length != 4){
+        if(dados.length != 5 || !"Consulta".equals(dados[0])){
             return null;
         }
 
         try {
-            String nomeServico = dados[0];
-            double valorBase = Double.parseDouble(dados[1]);
-            String motivo = dados[2];
-            String diagnostico = dados[3];
+            String nomeServico = dados[1];
+            double valorBase = Double.parseDouble(dados[2]);
+            String motivo = dados[3];
+            String diagnostico = dados[4];
 
             return new Consulta(nomeServico, valorBase, motivo, diagnostico);
         } catch (NumberFormatException e) {

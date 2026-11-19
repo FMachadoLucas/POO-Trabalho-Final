@@ -10,6 +10,14 @@ public abstract class Servico {
 
     //construtor
     public  Servico(String nomeServico, double valorBase){
+        if (nomeServico == null || nomeServico.trim().isEmpty()) {
+            throw new IllegalArgumentException("Nome do serviço é obrigatório.");
+        }
+
+        if (valorBase < 0 || Double.isNaN(valorBase) || Double.isInfinite(valorBase)) {
+            throw new IllegalArgumentException("Valor base do serviço é inválido.");
+        }
+
         this.id = proximoId++;
         this.nomeServico = nomeServico;
         this.valorBase = valorBase;
